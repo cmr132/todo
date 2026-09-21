@@ -123,8 +123,9 @@
 
     function setDate(){
       var d = new Date();
+      var days = ['일','월','화','수','목','금','토'];
       document.getElementById('date').textContent =
-        d.getFullYear() + '. ' + pad(d.getMonth()+1) + '. ' + pad(d.getDate());
+        d.getFullYear() + '. ' + pad(d.getMonth()+1) + '. ' + pad(d.getDate()) + ' (' + days[d.getDay()] + ')';
     }
 
     function add(){
