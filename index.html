@@ -49,6 +49,8 @@
     .chip{ border:none; background:transparent; font-family:var(--sans); font-size:13px; color:var(--muted); padding:6px 12px; border-radius:8px; }
     .chip.on{ color:var(--pine); background:var(--pineSoft); font-weight:700; }
     .clear{ border:none; background:transparent; font-family:var(--sans); font-size:12px; color:var(--muted); padding:6px 8px; }
+    .searchRow{ display:none; margin:0 0 12px; }
+    .searchRow.open{ display:flex; }
 
     ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
     li.item{ display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--card); border:1px solid var(--line); border-radius:12px; animation:rise .24s ease both; }
@@ -87,6 +89,11 @@
       <button class="chip" data-f="done">완료</button>
       <span class="sp"></span>
       <button class="clear" id="clearBtn" style="display:none">완료 항목 비우기</button>
+      <button class="clear" id="searchToggle">검색조건 펼치기</button>
+    </div>
+
+    <div class="inputRow searchRow" id="searchRow">
+      <input id="searchField" type="text" placeholder="할 일 검색" enterkeyhint="search" />
     </div>
 
     <ul id="list"></ul>
@@ -101,6 +108,7 @@
     var KEY = 'todos:v1';
     var todos = [];
     var filter = 'all';
+    var searchQuery = '';
 
     function load(){
       try { var raw = localStorage.getItem(KEY); if(raw) todos = JSON.parse(raw); }
@@ -118,6 +126,9 @@
     var foot = document.getElementById('foot');
     var count = document.getElementById('count');
     var clearBtn = document.getElementById('clearBtn');
+    var searchToggle = document.getElementById('searchToggle');
+    var searchRow = document.getElementById('searchRow');
+    var searchField = document.getElementById('searchField');
 
     function pad(n){ return String(n).padStart(2,'0'); }
 
@@ -161,8 +172,11 @@
       foot.style.display = total>0 ? 'flex' : 'none';
       count.textContent = '남은 일 ' + pad(remaining) + ' / ' + pad(total);
 
+      var q = searchQuery.trim().toLowerCase();
       var shown = todos.filter(function(x){
-        return filter==='active' ? !x.done : filter==='done' ? x.done : true;
+        var matchesFilter = filter==='active' ? !x.done : filter==='done' ? x.done : true;
+        var matchesSearch = q==='' || x.text.toLowerCase().indexOf(q) > -1;
+        return matchesFilter && matchesSearch;
       });
 
       list.innerHTML = '';
@@ -171,6 +185,8 @@
         li.className = 'empty';
         li.textContent = total===0
           ? '아직 할 일이 없어요. 위에 하나 추가해 보세요.'
+          : q!==''
+          ? '검색 결과가 없어요.'
           : filter==='done' ? '완료한 일이 아직 없어요.'
           : '진행 중인 일이 없어요. 잘 하고 있네요.';
         list.appendChild(li);
@@ -207,6 +223,22 @@
     });
     field.addEventListener('keydown', function(e){ if(e.key==='Enter') add(); });
     clearBtn.onclick = clearDone;
+    searchToggle.onclick = function(){
+      var opening = !searchRow.classList.contains('open');
+      searchRow.classList.toggle('open', opening);
+      searchToggle.textContent = opening ? '검색조건 접기' : '검색조건 펼치기';
+      if(opening){
+        searchField.focus();
+      } else {
+        searchField.value = '';
+        searchQuery = '';
+        render();
+      }
+    };
+    searchField.addEventListener('input', function(){
+      searchQuery = searchField.value;
+      render();
+    });
     Array.prototype.forEach.call(document.querySelectorAll('.chip'), function(c){
       c.onclick = function(){
         filter = c.getAttribute('data-f');
